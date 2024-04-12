@@ -35,3 +35,4 @@ export { SearchIcon } from "./search-icon";
 export { TrendUpIcon } from "./trend-up-icon";
 export { TrendDownIcon } from "./trend-down-icon";
 export { FontIcon } from "./font-icon";
+export { SortIcon } from "./sort-icon";

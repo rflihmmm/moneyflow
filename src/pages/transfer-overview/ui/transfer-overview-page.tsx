@@ -1,21 +1,27 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import React from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
-
-import { Header } from "@widgets/header";
 
 import {
   CreateTransferFormFieldset,
   createTransferFormSchema,
   CreateTransferFormData,
   UpdateTransferButton,
-} from "@features/create-transfer";
+} from "@widgets/create-transfer";
+import { Header } from "@widgets/header";
+
 import { DeleteTransferButton } from "@features/delete-transfer";
 import { searchTransactionsByTitle } from "@features/search-transactions";
+import { getAccountBalance } from "@features/statistics";
 
 import { useAccountsStore } from "@entities/account";
-import { useCurrenciesStore } from "@entities/currency";
-import { useTransfersStore } from "@entities/transaction";
+import {
+  createCurrencyAmountString,
+  formatAmountPrecision,
+  useCurrenciesStore,
+} from "@entities/currency";
+import { useTransactions, useTransfersStore } from "@entities/transaction";
 
 import { toLocalDatetime } from "@shared/lib/date";
 import { PageLayout } from "@shared/ui/layouts";
@@ -26,12 +32,40 @@ export const TransferOverviewPage = () => {
     throw new Error("Impossible transfer id");
   }
 
-  const { accounts, order: accountsOrder } = useAccountsStore();
   const { currencies } = useCurrenciesStore();
   const { getTransfer, transfers } = useTransfersStore((state) => ({
     transfers: state.transfers,
     getTransfer: state.getTransfer,
   }));
+  const transactions = useTransactions();
+  const { accounts, order: accountsOrder } = useAccountsStore();
+  const accountsWithBalances = React.useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(accounts).map(([accountId, account]) => {
+          const currency = currencies.currencies[account.currencyId];
+          return [
+            accountId,
+            {
+              ...account,
+              currency,
+              formattedBalance: createCurrencyAmountString({
+                currency,
+                amount: formatAmountPrecision(
+                  getAccountBalance(
+                    accountId,
+                    account.initialBalance,
+                    transactions,
+                  ),
+                  currency.precision,
+                ),
+              }),
+            },
+          ];
+        }),
+      ),
+    [accounts, currencies, transactions],
+  );
 
   const transfer = getTransfer(id);
 
@@ -62,7 +96,7 @@ export const TransferOverviewPage = () => {
         />
         <CreateTransferFormFieldset
           transfers={transfers}
-          accounts={{ accounts, order: accountsOrder }}
+          accounts={{ accounts: accountsWithBalances, order: accountsOrder }}
           currencies={currencies.currencies}
           searchTransactionsByTitle={searchTransactionsByTitle}
         />

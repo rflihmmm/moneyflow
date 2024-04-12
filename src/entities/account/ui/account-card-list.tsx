@@ -1,24 +1,18 @@
-import { AccountCard, AccountCardAccount } from "./account-card";
-
-export interface AccountCardListAccount {
-  account: AccountCardAccount;
-  formattedBalance: string;
-}
+import React from "react";
+import { twMerge } from "tailwind-merge";
 
 interface AccountCardListProps {
-  accounts: AccountCardListAccount[];
+  children?: React.ReactNode;
+  className?: string;
 }
 
-export const AccountCardList = ({ accounts }: AccountCardListProps) => {
+export const AccountCardList = ({
+  children,
+  className,
+}: AccountCardListProps) => {
   return (
-    <div className="flex flex-col gap-2.5">
-      {accounts.map((account) => (
-        <AccountCard
-          key={account.account.id}
-          account={account.account}
-          formattedBalance={account.formattedBalance}
-        />
-      ))}
+    <div className={twMerge("flex flex-col gap-2.5", className)}>
+      {children}
     </div>
   );
 };

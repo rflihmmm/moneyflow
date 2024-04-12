@@ -1,6 +1,8 @@
 import { Controller, useFormContext } from "react-hook-form";
 import { z } from "zod";
 
+import { searchAccountsByTitle } from "@features/search-accounts";
+
 import { AccountID, AccountIcon, AccountPicker } from "@entities/account";
 import {
   CategorySelect,
@@ -8,8 +10,7 @@ import {
   IncomeCategories,
 } from "@entities/category";
 import {
-  CurrenciesMap,
-  CurrencyID,
+  CurrencySymbolPosition,
   createCurrencyAmountString,
 } from "@entities/currency";
 import {
@@ -31,7 +32,12 @@ interface CreateIncomeFormAccount {
   title: string;
   color: ColorPickerColor;
   icon: AccountIcon;
-  currencyId: CurrencyID;
+  currency: {
+    symbol: string;
+    symbolPosition: CurrencySymbolPosition;
+    hasSpaceBetweenAmountAndSymbol: boolean;
+  };
+  formattedBalance: string;
 }
 
 export interface CreateIncomeFormData {
@@ -50,7 +56,6 @@ export interface CreateIncomeFormFieldsetProps
     order: AccountID[];
     accounts: Record<AccountID, CreateIncomeFormAccount>;
   };
-  currencies: CurrenciesMap;
 }
 
 export const createIncomeFormSchema = z.object({
@@ -65,23 +70,19 @@ export const CreateIncomeFormFieldset = ({
   incomes,
   categories,
   accounts,
-  currencies,
   searchTransactionsByTitle,
 }: CreateIncomeFormFieldsetProps) => {
   const { control, register, watch, reset } =
     useFormContext<CreateIncomeFormData>();
 
   const [accountId, title] = watch(["accountId", "title"]);
-  const currencySymbol =
-    accountId === null
-      ? undefined
-      : currencies[accounts.accounts[accountId].currencyId]?.symbol;
+  const account = accountId === null ? null : accounts.accounts[accountId];
   const sortedIncomes = sortTransactionsByDateTime(Object.values(incomes));
   const formattedIncomes = sortedIncomes.map((income) => ({
     ...income,
     formattedAmount: createIncomeAmountString(
       createCurrencyAmountString({
-        currency: currencies[accounts.accounts[income.accountId].currencyId],
+        currency: accounts.accounts[income.accountId].currency,
         amount: income.amount,
       }),
     ),
@@ -105,7 +106,7 @@ export const CreateIncomeFormFieldset = ({
         amountColor="green"
         inputProps={{
           label: "Title",
-          placeholder: "e.g. Salary, ...",
+          placeholder: "e.g. Bananas, Bread, ...",
           value: title,
           ...register("title"),
         }}
@@ -130,17 +131,13 @@ export const CreateIncomeFormFieldset = ({
         name="accountId"
         render={({ field: { value, onChange } }) => (
           <AccountPicker
-            accounts={accounts.order.map((accountId) => {
-              const account = accounts.accounts[accountId];
-              return {
-                ...account,
-                currencySymbol: currencies[account.currencyId].symbol,
-              };
-            })}
+            accounts={accounts}
             label="Account"
             required
             value={value}
             onChange={onChange}
+            placeholder="Tap to select"
+            searchAccountsByTitle={searchAccountsByTitle}
           />
         )}
       />
@@ -149,7 +146,7 @@ export const CreateIncomeFormFieldset = ({
         placeholder="15.8"
         required
         type="number"
-        leftAddon={currencySymbol}
+        leftAddon={account?.currency.symbol}
         {...register("amount")}
       />
       <Input

@@ -3,7 +3,11 @@ import { twMerge } from "tailwind-merge";
 
 import { getAccountBalance } from "@features/statistics";
 
-import { AccountCardList, useAccountsStore } from "@entities/account";
+import {
+  AccountCardLink,
+  AccountCardList,
+  useAccountsStore,
+} from "@entities/account";
 import {
   createCurrencyAmountString,
   formatAmountPrecision,
@@ -25,26 +29,31 @@ export const AccountsTabPanel = () => {
   return (
     <HeadlessTab.Panel as="div" className="text-text">
       {order.length ? (
-        <AccountCardList
-          accounts={order.map((accountId) => {
+        <AccountCardList>
+          {order.map((accountId) => {
             const account = accounts[accountId];
             const currency = currencies[account.currencyId];
-            return {
-              account,
-              formattedBalance: createCurrencyAmountString({
-                currency,
-                amount: formatAmountPrecision(
-                  getAccountBalance(
-                    accountId,
-                    account.initialBalance,
-                    transactions,
-                  ),
-                  currency.precision,
-                ),
-              }),
-            };
+            return (
+              <AccountCardLink
+                key={accountId}
+                account={{
+                  ...account,
+                  formattedBalance: createCurrencyAmountString({
+                    currency,
+                    amount: formatAmountPrecision(
+                      getAccountBalance(
+                        accountId,
+                        account.initialBalance,
+                        transactions,
+                      ),
+                      currency.precision,
+                    ),
+                  }),
+                }}
+              />
+            );
           })}
-        />
+        </AccountCardList>
       ) : (
         <p
           className={twMerge(

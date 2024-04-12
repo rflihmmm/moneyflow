@@ -1,13 +1,19 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DateTime } from "luxon";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
+import { getAccountBalance } from "@features/statistics";
+
 import { useAccountsStore } from "@entities/account";
-import { useCurrenciesStore } from "@entities/currency";
-import { useTransfersStore } from "@entities/transaction";
+import {
+  createCurrencyAmountString,
+  formatAmountPrecision,
+  useCurrenciesStore,
+} from "@entities/currency";
+import { useTransactions, useTransfersStore } from "@entities/transaction";
 
 import { getNowLocalDatetime } from "@shared/lib/date";
 import { Button } from "@shared/ui/buttons";
@@ -35,10 +41,38 @@ export const CreateTransferForm = ({
     transfers: state.transfers,
     createTransfer: state.createTransfer,
   }));
-  const { order: accountsOrder, accounts } = useAccountsStore();
+  const transactions = useTransactions();
   const {
     currencies: { currencies },
   } = useCurrenciesStore();
+  const { order: accountsOrder, accounts } = useAccountsStore();
+  const accountsWithBalances = React.useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(accounts).map(([accountId, account]) => {
+          const currency = currencies[account.currencyId];
+          return [
+            accountId,
+            {
+              ...account,
+              currency,
+              formattedBalance: createCurrencyAmountString({
+                currency,
+                amount: formatAmountPrecision(
+                  getAccountBalance(
+                    accountId,
+                    account.initialBalance,
+                    transactions,
+                  ),
+                  currency.precision,
+                ),
+              }),
+            },
+          ];
+        }),
+      ),
+    [accounts, currencies, transactions],
+  );
   const {
     getCreateTransferFormState,
     setCreateTransferFormState,
@@ -137,7 +171,7 @@ export const CreateTransferForm = ({
       >
         <CreateTransferFormFieldset
           transfers={transfers}
-          accounts={{ order: accountsOrder, accounts }}
+          accounts={{ order: accountsOrder, accounts: accountsWithBalances }}
           currencies={currencies}
           searchTransactionsByTitle={searchTransactionsByTitle}
         />

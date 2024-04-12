@@ -1,6 +1,6 @@
+import { CreateIncomeForm } from "@widgets/create-income";
 import { Header } from "@widgets/header";
 
-import { CreateIncomeForm } from "@features/create-income";
 import { searchTransactionsByTitle } from "@features/search-transactions";
 
 import { PageLayout } from "@shared/ui/layouts";

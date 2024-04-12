@@ -1,7 +1,6 @@
 import { twMerge } from "tailwind-merge";
 
 import { ColorPickerColor } from "@shared/ui/color-pickers";
-import { Link } from "@shared/ui/links";
 
 import { AccountID, AccountIcon } from "../model/models";
 
@@ -12,12 +11,13 @@ export interface AccountCardAccount {
   title: string;
   icon: AccountIcon;
   color: ColorPickerColor;
+  formattedBalance: string;
 }
 
-interface AccountCardProps {
+export interface AccountCardProps {
   account: AccountCardAccount;
-  formattedBalance: string;
   className?: string;
+  onClick?: () => void;
 }
 
 const colorToClassName: Record<ColorPickerColor, string> = {
@@ -39,26 +39,26 @@ const colorToClassName: Record<ColorPickerColor, string> = {
 
 export const AccountCard = ({
   account,
-  formattedBalance,
   className,
+  onClick,
 }: AccountCardProps) => {
   return (
-    <Link
-      to={`/accounts/${account.id}`}
+    <div
       className={twMerge(
         "flex justify-between items-center gap-4 p-4 rounded text-xl",
         "text-crust font-extrabold transition-colors whitespace-nowrap",
         colorToClassName[account.color],
         className,
       )}
+      onClick={onClick}
     >
       <div className="flex gap-3 items-center text-base font-bold">
         {iconToComponent[account.icon]}
         {account.title}
       </div>
       <span className="text-xl font-extrabold overflow-x-auto">
-        {formattedBalance}
+        {account.formattedBalance}
       </span>
-    </Link>
+    </div>
   );
 };

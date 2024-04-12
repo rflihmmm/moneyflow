@@ -10,6 +10,7 @@ export default {
 
       "base-color": "rgba(var(--color-base), <alpha-value>)",
       "base-color-active": "rgba(var(--color-base-active), <alpha-value>)",
+      "base1-color": "rgba(var(--color-base1), <alpha-value>)",
       mantle: "rgba(var(--color-mantle), <alpha-value>)",
       crust: "rgba(var(--color-crust), <alpha-value>)",
 

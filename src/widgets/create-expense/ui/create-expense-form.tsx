@@ -1,14 +1,20 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { DateTime } from "luxon";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
+import { getAccountBalance } from "@features/statistics";
+
 import { useAccountsStore } from "@entities/account";
 import { useExpenseCategoriesStore } from "@entities/category";
-import { useCurrenciesStore } from "@entities/currency";
-import { useExpensesStore } from "@entities/transaction";
+import {
+  createCurrencyAmountString,
+  formatAmountPrecision,
+  useCurrenciesStore,
+} from "@entities/currency";
+import { useExpensesStore, useTransactions } from "@entities/transaction";
 
 import { getNowLocalDatetime } from "@shared/lib/date";
 import { Button } from "@shared/ui/buttons";
@@ -32,15 +38,43 @@ export const CreateExpenseForm = ({
   searchTransactionsByTitle,
 }: CreateExpenseFormProps) => {
   const navigate = useNavigate();
+  const {
+    currencies: { currencies },
+  } = useCurrenciesStore();
   const { createExpense, expenses } = useExpensesStore((state) => ({
     expenses: state.expenses,
     createExpense: state.createExpense,
   }));
+  const transactions = useTransactions();
   const { expenseCategories } = useExpenseCategoriesStore();
   const { order: accountsOrder, accounts } = useAccountsStore();
-  const {
-    currencies: { currencies },
-  } = useCurrenciesStore();
+  const accountsWithBalances = React.useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(accounts).map(([accountId, account]) => {
+          const currency = currencies[account.currencyId];
+          return [
+            accountId,
+            {
+              ...account,
+              currency,
+              formattedBalance: createCurrencyAmountString({
+                currency,
+                amount: formatAmountPrecision(
+                  getAccountBalance(
+                    accountId,
+                    account.initialBalance,
+                    transactions,
+                  ),
+                  currency.precision,
+                ),
+              }),
+            },
+          ];
+        }),
+      ),
+    [accounts, currencies, transactions],
+  );
   const {
     getCreateExpenseFormState,
     setCreateExpenseFormState,
@@ -125,8 +159,7 @@ export const CreateExpenseForm = ({
         <CreateExpenseFormFieldset
           expenses={expenses}
           categories={expenseCategories}
-          accounts={{ order: accountsOrder, accounts }}
-          currencies={currencies}
+          accounts={{ order: accountsOrder, accounts: accountsWithBalances }}
           searchTransactionsByTitle={searchTransactionsByTitle}
         />
         <Button

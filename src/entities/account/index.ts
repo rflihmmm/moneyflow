@@ -9,6 +9,7 @@ export type {
 } from "./model/models";
 export { AccountIcon } from "./model/models";
 export { AccountCard } from "./ui/account-card";
+export { AccountCardLink } from "./ui/account-card-link";
 export { AccountCardList } from "./ui/account-card-list";
 export { AccountIconPicker } from "./ui/account-icon-picker";
 export { AccountPicker } from "./ui/account-picker";

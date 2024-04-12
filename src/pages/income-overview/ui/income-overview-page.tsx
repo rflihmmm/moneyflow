@@ -1,22 +1,28 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import React from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
-
-import { Header } from "@widgets/header";
 
 import {
   CreateIncomeFormFieldset,
   createIncomeFormSchema,
   CreateIncomeFormData,
   UpdateIncomeButton,
-} from "@features/create-income";
+} from "@widgets/create-income";
+import { Header } from "@widgets/header";
+
 import { DeleteIncomeButton } from "@features/delete-income";
 import { searchTransactionsByTitle } from "@features/search-transactions";
+import { getAccountBalance } from "@features/statistics";
 
 import { useAccountsStore } from "@entities/account";
 import { useIncomeCategoriesStore } from "@entities/category";
-import { useCurrenciesStore } from "@entities/currency";
-import { useIncomesStore } from "@entities/transaction";
+import {
+  createCurrencyAmountString,
+  formatAmountPrecision,
+  useCurrenciesStore,
+} from "@entities/currency";
+import { useIncomesStore, useTransactions } from "@entities/transaction";
 
 import { toLocalDatetime } from "@shared/lib/date";
 import { PageLayout } from "@shared/ui/layouts";
@@ -34,6 +40,34 @@ export const IncomeOverviewPage = () => {
     incomes: state.incomes,
     getIncome: state.getIncome,
   }));
+  const transactions = useTransactions();
+  const accountsWithBalances = React.useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(accounts).map(([accountId, account]) => {
+          const currency = currencies.currencies[account.currencyId];
+          return [
+            accountId,
+            {
+              ...account,
+              currency,
+              formattedBalance: createCurrencyAmountString({
+                currency,
+                amount: formatAmountPrecision(
+                  getAccountBalance(
+                    accountId,
+                    account.initialBalance,
+                    transactions,
+                  ),
+                  currency.precision,
+                ),
+              }),
+            },
+          ];
+        }),
+      ),
+    [accounts, currencies, transactions],
+  );
 
   const income = getIncome(id);
 
@@ -61,8 +95,7 @@ export const IncomeOverviewPage = () => {
         <CreateIncomeFormFieldset
           incomes={incomes}
           categories={incomeCategories}
-          accounts={{ accounts, order: accountsOrder }}
-          currencies={currencies.currencies}
+          accounts={{ accounts: accountsWithBalances, order: accountsOrder }}
           searchTransactionsByTitle={searchTransactionsByTitle}
         />
       </FormProvider>

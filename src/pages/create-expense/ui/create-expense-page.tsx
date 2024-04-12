@@ -1,6 +1,6 @@
+import { CreateExpenseForm } from "@widgets/create-expense";
 import { Header } from "@widgets/header";
 
-import { CreateExpenseForm } from "@features/create-expense";
 import { searchTransactionsByTitle } from "@features/search-transactions";
 
 import { PageLayout } from "@shared/ui/layouts";

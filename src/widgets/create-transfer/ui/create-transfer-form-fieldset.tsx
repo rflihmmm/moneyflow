@@ -1,10 +1,12 @@
 import { Controller, useFormContext } from "react-hook-form";
 import { z } from "zod";
 
+import { searchAccountsByTitle } from "@features/search-accounts";
+
 import { AccountID, AccountIcon, AccountPicker } from "@entities/account";
 import {
   CurrenciesMap,
-  CurrencyID,
+  CurrencySymbolPosition,
   createCurrencyAmountString,
 } from "@entities/currency";
 import {
@@ -26,7 +28,13 @@ interface CreateTransferFormAccount {
   title: string;
   color: ColorPickerColor;
   icon: AccountIcon;
-  currencyId: CurrencyID;
+  currency: {
+    id: string;
+    symbol: string;
+    symbolPosition: CurrencySymbolPosition;
+    hasSpaceBetweenAmountAndSymbol: boolean;
+  };
+  formattedBalance: string;
 }
 
 export interface CreateTransferFormData {
@@ -60,7 +68,6 @@ export const createTransferFormSchema = z.object({
 export const CreateTransferFormFieldset = ({
   transfers,
   accounts,
-  currencies,
   searchTransactionsByTitle,
 }: CreateTransferFormFieldsetProps) => {
   const { control, register, watch, reset } =
@@ -71,32 +78,26 @@ export const CreateTransferFormFieldset = ({
     "toAccountId",
     "title",
   ]);
-  const fromAccountCurrencySymbol =
-    fromAccountId === null
-      ? undefined
-      : currencies[accounts.accounts[fromAccountId].currencyId]?.symbol;
-  const toAccountCurrencySymbol =
-    toAccountId === null
-      ? undefined
-      : currencies[accounts.accounts[toAccountId].currencyId]?.symbol;
+  const fromAccount =
+    fromAccountId === null ? null : accounts.accounts[fromAccountId];
+  const toAccount =
+    toAccountId === null ? null : accounts.accounts[toAccountId];
   const sortedTransfers = sortTransactionsByDateTime(Object.values(transfers));
   const formattedTransfers = sortedTransfers.map((transfer) => {
     const fromAccount = accounts.accounts[transfer.fromAccount.accountId];
-    const fromCurrency = currencies[fromAccount.currencyId];
     const toAccount = accounts.accounts[transfer.toAccount.accountId];
-    const toCurrency = currencies[toAccount.currencyId];
     return {
       ...transfer,
       formattedAmount: createTransferAmountString({
         fromAmount: createCurrencyAmountString({
-          currency: fromCurrency,
+          currency: fromAccount.currency,
           amount: transfer.fromAccount.amount,
         }),
         toAmount: createCurrencyAmountString({
-          currency: toCurrency,
+          currency: toAccount.currency,
           amount: transfer.toAccount.amount,
         }),
-        sameCurrencies: fromAccount.currencyId === toAccount.currencyId,
+        sameCurrencies: fromAccount.currency.id === toAccount.currency.id,
       }),
     };
   });
@@ -134,15 +135,12 @@ export const CreateTransferFormFieldset = ({
           name="fromAccountId"
           render={({ field: { value, onChange } }) => (
             <AccountPicker
-              accounts={accounts.order.map((accountId) => {
-                const account = accounts.accounts[accountId];
-                return {
-                  ...account,
-                  currencySymbol: currencies[account.currencyId].symbol,
-                };
-              })}
+              accounts={accounts}
+              required
               value={value}
               onChange={onChange}
+              placeholder="Tap to select"
+              searchAccountsByTitle={searchAccountsByTitle}
             />
           )}
         />
@@ -152,7 +150,7 @@ export const CreateTransferFormFieldset = ({
         placeholder="15.8"
         required
         type="number"
-        leftAddon={fromAccountCurrencySymbol}
+        leftAddon={fromAccount?.currency.symbol}
         {...register("fromAccountAmount")}
       />
       <div className="flex flex-col gap-3">
@@ -162,15 +160,12 @@ export const CreateTransferFormFieldset = ({
           name="toAccountId"
           render={({ field: { value, onChange } }) => (
             <AccountPicker
-              accounts={accounts.order.map((accountId) => {
-                const account = accounts.accounts[accountId];
-                return {
-                  ...account,
-                  currencySymbol: currencies[account.currencyId].symbol,
-                };
-              })}
+              accounts={accounts}
+              required
               value={value}
               onChange={onChange}
+              placeholder="Tap to select"
+              searchAccountsByTitle={searchAccountsByTitle}
             />
           )}
         />
@@ -180,7 +175,7 @@ export const CreateTransferFormFieldset = ({
         placeholder="15.8"
         required
         type="number"
-        leftAddon={toAccountCurrencySymbol}
+        leftAddon={toAccount?.currency.symbol}
         {...register("toAccountAmount")}
       />
       <Input
