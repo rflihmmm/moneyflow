@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { DateTime } from "luxon";
 import React, { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
 import { getAccountBalance } from "@features/statistics";
@@ -38,6 +38,7 @@ export const CreateExpenseForm = ({
   searchTransactionsByTitle,
 }: CreateExpenseFormProps) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const {
     currencies: { currencies },
   } = useCurrenciesStore();
@@ -84,12 +85,20 @@ export const CreateExpenseForm = ({
   } = useCreateExpenseFormStore();
 
   const defaultValues = getCreateExpenseFormState();
+  const defaultDatetimeSearchParam = searchParams.get("datetime");
+  const defaultDatetimeFromSearch =
+    defaultDatetimeSearchParam &&
+    DateTime.fromISO(defaultDatetimeSearchParam).isValid
+      ? defaultDatetimeSearchParam
+      : undefined;
   const methods = useForm<CreateExpenseFormData>({
     defaultValues: {
       ...defaultValues,
-      datetime: defaultValues.datetime
-        ? defaultValues.datetime
-        : getNowLocalDatetime(),
+      datetime:
+        defaultDatetimeFromSearch ??
+        (defaultValues.datetime
+          ? defaultValues.datetime
+          : getNowLocalDatetime()),
     },
     resolver: zodResolver(createExpenseFormSchema),
   });

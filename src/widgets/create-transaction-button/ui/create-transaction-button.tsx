@@ -10,11 +10,21 @@ import {
 import { Link } from "@shared/ui/links";
 import { ModalWithoutContent } from "@shared/ui/modals";
 
-export const CreateTransactionButton = () => {
+interface CreateTransactionButtonProps {
+  defaultDatetime?: string;
+}
+
+export const CreateTransactionButton = ({
+  defaultDatetime,
+}: CreateTransactionButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const onOpenClick = () => setIsOpen((state) => !state);
   const onClose = () => setIsOpen(false);
+  const createTransactionPath = (path: string) =>
+    defaultDatetime
+      ? `${path}?datetime=${encodeURIComponent(defaultDatetime)}`
+      : path;
 
   return (
     <>
@@ -24,7 +34,7 @@ export const CreateTransactionButton = () => {
         contentClassName="fixed bottom-36"
       >
         <div className="flex justify-center items-end gap-[3.25rem]">
-          <Link to="/incomes/create">
+          <Link to={createTransactionPath("/incomes/create")}>
             <FloatingActionButton
               size="md"
               variant="solidGreen"
@@ -33,7 +43,7 @@ export const CreateTransactionButton = () => {
               <DownArrowIcon size="md" />
             </FloatingActionButton>
           </Link>
-          <Link to="/transfers/create">
+          <Link to={createTransactionPath("/transfers/create")}>
             <FloatingActionButton
               size="md"
               variant="solidMauve"
@@ -43,7 +53,7 @@ export const CreateTransactionButton = () => {
               <RightLeftArrowIcon size="md" />
             </FloatingActionButton>
           </Link>
-          <Link to="/expenses/create">
+          <Link to={createTransactionPath("/expenses/create")}>
             <FloatingActionButton
               size="md"
               variant="solidRed"

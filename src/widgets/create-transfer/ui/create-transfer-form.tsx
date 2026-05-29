@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { DateTime } from "luxon";
 import React, { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
 import { getAccountBalance } from "@features/statistics";
@@ -37,6 +37,7 @@ export const CreateTransferForm = ({
   searchTransactionsByTitle,
 }: CreateTransferFormProps) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { createTransfer, transfers } = useTransfersStore((state) => ({
     transfers: state.transfers,
     createTransfer: state.createTransfer,
@@ -82,12 +83,20 @@ export const CreateTransferForm = ({
   } = useCreateTransferFormStore();
 
   const defaultValues = getCreateTransferFormState();
+  const defaultDatetimeSearchParam = searchParams.get("datetime");
+  const defaultDatetimeFromSearch =
+    defaultDatetimeSearchParam &&
+    DateTime.fromISO(defaultDatetimeSearchParam).isValid
+      ? defaultDatetimeSearchParam
+      : undefined;
   const methods = useForm<CreateTransferFormData>({
     defaultValues: {
       ...defaultValues,
-      datetime: defaultValues.datetime
-        ? defaultValues.datetime
-        : getNowLocalDatetime(),
+      datetime:
+        defaultDatetimeFromSearch ??
+        (defaultValues.datetime
+          ? defaultValues.datetime
+          : getNowLocalDatetime()),
     },
     resolver: zodResolver(createTransferFormSchema),
   });
