@@ -111,11 +111,14 @@ export const TransactionsCalendar = () => {
   };
 
   const closeSelectedDateDrawer = () => {
-    setParams((currentParams) => {
-      const nextParams = new URLSearchParams(currentParams);
-      nextParams.delete("selectedDate");
-      return nextParams;
-    });
+    setParams(
+      (currentParams) => {
+        const nextParams = new URLSearchParams(currentParams);
+        nextParams.delete("selectedDate");
+        return nextParams;
+      },
+      { replace: true },
+    );
   };
 
   const SummaryDayButton = ({
